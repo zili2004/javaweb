@@ -7,14 +7,17 @@ String basePath = request.getScheme()+"://"+request.getServerName()+":"+request.
 <html>
 <head>
 <base href="<%=basePath%>">
-
-<title>登陆</title>
+<title>登陆 - 学生成绩管理系统</title>
 
 <meta http-equiv="pragma" content="no-cache">
 <meta http-equiv="cache-control" content="no-cache">
 <meta http-equiv="expires" content="0">
-<meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
-<meta http-equiv="description" content="This is my page">
+
+<link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<script src="js/jquery-3.3.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/particle-bg.umd.min.js"></script>
+
 <style type="text/css">
 html, body {
       margin: 0;
@@ -25,126 +28,126 @@ html, body {
       overflow: hidden;
     }
 canvas{
-	position: absolute;
-	top: 0;
-	z-index: -1;
+    position: absolute;
+    top: 0;
+    z-index: -1;
 }
-#_top {
-	text-align: center;
-	height: 100px;
-	font-size: 30px;
-	padding-top: 30px;
-	letter-spacing: 10px; /*字与字之间的间距*/
-}
-#_top span{
-	color: aliceblue;
-}
-
 .div_body {
-	height: 400px;
-	width: 30%;
-	margin: 10% auto;
-	position: relative;
-	/*background:rgba(255,255,255, 0.3);*/
-	background: #fff;
-	/*box-shadow: whitesmoke 5px 5px 50px 5px;*/
-	border-radius: 6px;
-	z-index: 2;
+    height: 400px;
+    width: 30%;
+    margin: 10% auto;
+    position: relative;
+    background: #fff;
+    border-radius: 6px;
+    z-index: 2;
+    padding-bottom: 20px;
 }
 #_body {
-	width: 100%;
-	text-align: center;
+    width: 100%;
+    text-align: center;
 }
 .msg{
-	padding-top: 20px;
-	color: #374b5d;
-	height: 40px;
+    padding-top: 20px;
+    color: red; /* 错误提示建议用红色醒目一些 */
+    height: 40px;
+    font-size: 16px;
+}
+.sys-title {
+    font-size: 24px;
+    color: #517fa4;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #517fa4;
+    padding-bottom: 10px;
 }
 table{
-	margin: 0 10%;
-	width: 100%;
-	height: 85%;
+    margin: 0 auto;
+    width: 80%;
 }
 table tr{
-	width: 100%;
-	height: 15%;
-}
-table tr td{
-	font-size: 20px;
-	width: 100%;
+    height: 50px;
 }
 .input{
-	width: 80%;
-	height: 55%;
-	border-radius: 10px;
-	text-align: center;
-	font-size: 15px;
-	border:1px solid #ccc;
-	color: #ccc;
-
+    width: 100%;
+    height: 40px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 15px;
+    border:1px solid #ccc;
+    color: #333; /* 改为深色，否则打字看不清 */
 }
 .btn {
     color: #ffffff;
     background-color: #40586d;
     border-color: #374b5d;
-		width:20%;
-		margin-right: 8%;
+    width: 25%;
+    margin: 0 2%;
+    cursor: pointer;
+}
+.btn:hover {
+    background-color: #517fa4;
 }
 .check{
-	width: 13%;
-
+    margin: 0 5px 0 15px;
 }
 </style>
-<link rel="stylesheet" href="https://cdn.bootcss.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-<script src="js/jquery-3.3.1.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
-<script src="js/particle-bg.umd.min.js"></script>
 
-<script type="text/javaScript">
+<script type="text/javascript">
+// 1. 初始化背景粒子
 window.onload = function() {
-	particleBg('body', {
+    particleBg('body', {
     color: 'rgba(255, 255, 255, 0.5)'
   });
+}
+
+// 2. 修复：补充缺失的表单提交校验函数
+function checkedForm(form) {
+    if(form.ID.value.trim() === "") {
+        alert("请输入账号！");
+        form.ID.focus();
+        return false;
+    }
+    if(form.pwd.value.trim() === "") {
+        alert("请输入密码！");
+        form.pwd.focus();
+        return false;
+    }
+    return true;
 }
 </script>
 </head>
 
 <body>
-	<div class="div_body">
-		<div id="_body">
-		<h3 class="msg" style="cursor:default">${massage }</h3>
-			<form action="ServletLogin" method="post"
-				onsubmit="return checked(this)">
-				<table>
-					<ul class="nav navbar-nav " style="border-bottom:#517fa4 2px">
-						<li>学生成绩管理系统</li>
-					</ul>
-					<tr>
-						<td><input class="input" type="text" name="ID" placeholder="账号">
-						</td>
-					</tr>
-					<tr>
-						<td><input class="input" type="password" name="pwd" placeholder="密码">
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<input class="check" type="radio" name="role" value="0" checked="checked">学生
-							<input class="check" type="radio" name="role" value="1">教师
-							<input class="check" type="radio" name="role" value="2">管理员
-						</td>
-					</tr>
-					<tr>
-						<td>
-							<input class="btn" type="submit" value="登录">
-							<input class="btn" type="button" name="register" value="注册"
-							onclick="window.open('register/register.jsp')">
-							<input class="btn" type="reset" value="取消">
-						</td>
-					</tr>
-				</table>
-			</form>
-		</div>
-	</div>
+    <div class="div_body">
+        <div id="_body">
+            <h3 class="msg" style="cursor:default">${msg}</h3>
+            
+            <div class="sys-title">学生成绩管理系统</div>
+            
+            <form action="ServletLogin" method="post" onsubmit="return checkedForm(this)">
+                <table>
+                    <tr>
+                        <td><input class="input" type="text" name="ID" placeholder="请输入账号"></td>
+                    </tr>
+                    <tr>
+                        <td><input class="input" type="password" name="pwd" placeholder="请输入密码"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; padding: 10px 0;">
+                            <input class="check" type="radio" name="role" value="0" checked="checked">学生
+                            <input class="check" type="radio" name="role" value="1">教师
+                            <input class="check" type="radio" name="role" value="2">管理员
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center; padding-top: 15px;">
+                            <input class="btn" type="submit" value="登录">
+                            <input class="btn" type="button" value="注册" onclick="window.location.href='register/register.jsp'">
+                            <input class="btn" type="reset" value="重置">
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </div>
 </body>
 </html>

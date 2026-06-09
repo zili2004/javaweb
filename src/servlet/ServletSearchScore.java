@@ -10,8 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import model.PageBean;
 import model.Score;
 
-import org.omg.CORBA.Request;
-
 import service.Impl.ScoreServiceImpl;
 
 public class ServletSearchScore extends HttpServlet{

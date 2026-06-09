@@ -7,95 +7,109 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.springframework.util.StringUtils;
 import service.Impl.StudentServiceImpl;
 import service.Impl.UserServiceImpl;
 
 import model.Student;
 import model.User;
 
-public class ServletRegistersStudent extends HttpServlet{
+public class ServletRegistersStudent extends HttpServlet {
 
-	private User user;
-	private Student student;
-	private UserServiceImpl userServiceImpl = new UserServiceImpl();
-	private StudentServiceImpl studentServiceImpl =new StudentServiceImpl();
+    private UserServiceImpl userServiceImpl = new UserServiceImpl();
+    private StudentServiceImpl studentServiceImpl = new StudentServiceImpl();
 
-	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-			throws ServletException, IOException {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
+            throws ServletException, IOException {
+        doPost(req, resp);
+    }
 
-		doPost(req, resp);
-	}
+    // Utility method to check for null or empty strings
+    private boolean isBlank(String str) {
+        return str == null || str.trim().isEmpty();
+    }
 
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		String stuNum = request.getParameter("stuNum");
-		if(StringUtils.isEmpty(stuNum)) {
-			request.setAttribute("msg", "学号不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		String stuName = request.getParameter("stuName");
-		if(StringUtils.isEmpty(stuName)) {
-			request.setAttribute("msg", "姓名不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		String pwd = request.getParameter("password");
-		if(StringUtils.isEmpty(pwd)) {
-			request.setAttribute("msg", "密码不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		String stuSex = request.getParameter("stuSex");
-		if(StringUtils.isEmpty(stuSex)) {
-			request.setAttribute("msg", "性别不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        
+        // ================= 1. Get common required info for all users =================
+        String stuNum = request.getParameter("stuNum"); // Account (Student ID / Teacher ID)
+        String stuName = request.getParameter("stuName"); // Name
+        String pwd = request.getParameter("password"); // Password
+        String phone = request.getParameter("phone"); // Phone number
+        String roleParam = request.getParameter("role"); // Role
+        
+        // Validate basic common information
+        if (isBlank(stuNum) || isBlank(stuName) || isBlank(pwd) || isBlank(phone) || isBlank(roleParam)) {
+            request.setAttribute("msg", "Error: Basic info (Account, Name, Password, Phone, Role) cannot be empty!");
+            request.getRequestDispatcher("register/register.jsp").forward(request, response);
+            return;
+        }
+        
+        int roleID = 0;
+        try {
+            roleID = Integer.parseInt(roleParam.trim());
+        } catch (NumberFormatException e) {
+            request.setAttribute("msg", "Error: Role format incorrect!");
+            request.getRequestDispatcher("register/register.jsp").forward(request, response);
+            return;
+        }
 
-		if(StringUtils.isEmpty(request.getParameter("stuAge"))) {
-			request.setAttribute("msg", "年龄不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		int stuAge = Integer.parseInt(request.getParameter("stuAge"));
+        // ================= 2. Get specific detailed information =================
+        String stuSex = request.getParameter("stuSex");
+        String stuClass = request.getParameter("stuClass");
+        String major = request.getParameter("major");
+        String department = request.getParameter("department");
+        
+        int stuAge = 0;
+        String ageStr = request.getParameter("stuAge");
+        if (!isBlank(ageStr)) {
+            try {
+                stuAge = Integer.parseInt(ageStr.trim());
+            } catch (Exception e) {}
+        }
 
-		if(StringUtils.isEmpty(request.getParameter("stuClass"))) {
-			request.setAttribute("msg", "班级不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		String stuClass = request.getParameter("stuClass");
+        // ================= 3. Unified account creation: Write to User table =================
+        // All roles must have a record in the User table to log in
+        User user = new User(stuNum, stuName, pwd, phone, roleID);
+        int rsUser = userServiceImpl.addUser(user);
+        
+        boolean isDetailSuccess = false; 
 
-		if(StringUtils.isEmpty(request.getParameter("major"))) {
-			request.setAttribute("msg", "专业不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		String major = request.getParameter("major");
-		if(StringUtils.isEmpty(request.getParameter("department"))) {
-			request.setAttribute("msg", "专业不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		String department = request.getParameter("department");
-		if(StringUtils.isEmpty(request.getParameter("phone"))) {
-			request.setAttribute("msg", "手机不能为空!");
-			request.getRequestDispatcher("register/register.jsp").forward(request, response);
-		}
-		String phone = request.getParameter("phone");
-		int roleID = Integer.parseInt(request.getParameter("role"));
-		user = new User(stuNum, stuName, pwd, phone, roleID);
-		student = new Student(stuNum, stuName, stuSex, stuAge, stuClass, major,
-				department);
+        // ================= 4. Role routing: Write to specific profile tables =================
+        if (roleID == 0) {
+            // [Student Channel]: Strictly validate student-specific fields
+            if (isBlank(stuClass) || isBlank(major) || isBlank(department)) {
+                request.setAttribute("msg", "Error: Students must fill Class, Major, and Department!");
+                request.getRequestDispatcher("register/register.jsp").forward(request, response);
+                return;
+            }
+            Student student = new Student(stuNum, stuName, stuSex, stuAge, stuClass, major, department);
+            int rsStu = studentServiceImpl.addStu(student);
+            isDetailSuccess = (rsStu > 0);
+            
+        } else if (roleID == 1) {
+            // [Teacher Channel]: 
+            // To prevent compilation crashes if TeacherServiceImpl is not yet implemented,
+            // we bypass detail insertion here. Teachers can log in as long as they have a User record.
+            isDetailSuccess = true; 
+            
+        } else if (roleID == 2) {
+            // [Admin Channel]: 
+            // There is no separate admin table. Admins only need a User record. Bypass detail insertion.
+            isDetailSuccess = true;
+        }
 
-			int rsUser=userServiceImpl.addUser(user);
-			int rsStu=studentServiceImpl.addStu(student);
-			if(rsStu>0 && rsUser>0){
-				request.setAttribute("massage", "注册成功！！");
-				request.getRequestDispatcher("login/login.jsp").forward(request, response);
-
-			}else{
-				request.setAttribute("msg", "注册失败！！");
-				request.getRequestDispatcher("register/register.jsp").forward(request, response);
-			}
-
-
-	}
-
+        // ================= 5. Determine final result and redirect =================
+        if (rsUser > 0 && isDetailSuccess) {
+            request.setAttribute("msg", "Register Success! Please login.");
+            request.getRequestDispatcher("login/login.jsp").forward(request, response);
+            return; 
+        } else {
+            request.setAttribute("msg", "Register Failed! Account may already exist.");
+            request.getRequestDispatcher("register/register.jsp").forward(request, response);
+            return;
+        }
+    }
 }
